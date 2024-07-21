@@ -8,14 +8,14 @@
 
 #define MAX_PATTERN_LENGTH 1024
 
-// Fonction pour convertir le pattern en tableaux d'octets et générer le mask
+
 void pattern_to_bytes_and_mask(const char *pattern, unsigned char **bytes, unsigned char **mask_bytes, size_t *length) {
-    size_t pattern_len = strlen(pattern) / 2; // Chaque octet est représenté par deux caractères hexadécimaux
+    size_t pattern_len = strlen(pattern) / 2; 
     *bytes = (unsigned char *)malloc(pattern_len);
     *mask_bytes = (unsigned char *)malloc(pattern_len);
     *length = pattern_len;
 
-    char byte_str[3] = {0};  // Pour stocker chaque octet sous forme de chaîne
+    char byte_str[3] = {0}; 
     for (size_t i = 0; i < pattern_len; i++) {
         strncpy(byte_str, &pattern[i * 2], 2);
         if (strncmp(byte_str, "??", 2) == 0) {
@@ -29,17 +29,16 @@ void pattern_to_bytes_and_mask(const char *pattern, unsigned char **bytes, unsig
     printf("Debug: Pattern and mask converted to bytes\n");
 }
 
-// Fonction pour vérifier un pattern à une position donnée
+
 int mask_check(const unsigned char *memory, const unsigned char *pattern, const unsigned char *mask, size_t pattern_len, size_t offset) {
     for (size_t i = 0; i < pattern_len; i++) {
         if ((memory[offset + i] & mask[i]) != (pattern[i] & mask[i])) {
-            return 0;  // Le pattern ne correspond pas
+            return 0;  
         }
     }
-    return 1;  // Le pattern correspond
+    return 1;  
 }
 
-// Fonction pour scanner une région de mémoire à la recherche d'un pattern
 unsigned long find_pattern_in_memory_region(const Process *proc, unsigned long start, unsigned long end, const unsigned char *pattern, const unsigned char *mask, size_t pattern_len) {
     size_t size = end - start;
     unsigned char *buffer = (unsigned char *)malloc(size);
@@ -66,7 +65,6 @@ unsigned long find_pattern_in_memory_region(const Process *proc, unsigned long s
     return 0;
 }
 
-// Fonction pour lire les régions de mémoire d'un processus à partir de /proc/[pid]/maps
 void list_all_rxp_regions(pid_t pid) {
     char maps_path[256];
     snprintf(maps_path, sizeof(maps_path), "/proc/%d/maps", pid);
@@ -85,7 +83,7 @@ void list_all_rxp_regions(pid_t pid) {
             continue;
         }
 
-        // Ignorer les plages de mémoire qui ne sont pas r-xp
+       
         if (strcmp(perms, "r-xp") != 0) {
             continue;
         }
@@ -114,7 +112,7 @@ void find_pattern_in_all_memory_regions(const Process *proc, const unsigned char
             continue;
         }
 
-        // Ignorer les plages de mémoire qui ne sont pas r-xp
+        
         if (strcmp(perms, "r-xp") != 0) {
             continue;
         }
@@ -137,17 +135,17 @@ int main(int argc, char *argv[]) {
         return EXIT_FAILURE;
     }
 
-    // Créer l'objet Process
+    
     Process *proc = process_create(argv[1]);
     if (!proc) {
         fprintf(stderr, "Failed to create process object for %s\n", argv[1]);
         return EXIT_FAILURE;
     }
 
-    // Afficher les informations du processus
+    
     printf("Process name: %s, PID: %d\n", process_get_name(proc), process_get_pid(proc));
 
-    // Lire le pattern à partir d'un fichier
+    
     FILE *pattern_file = fopen("pattern.txt", "r");
     if (!pattern_file) {
         perror("Failed to open pattern file");
@@ -159,29 +157,24 @@ int main(int argc, char *argv[]) {
     fscanf(pattern_file, "Pattern: %s\n", pattern_str);
     fclose(pattern_file);
 
-    // Vérifier si le pattern est vide
     if (strlen(pattern_str) == 0) {
         fprintf(stderr, "Pattern is empty. Please provide a valid pattern.\n");
         process_destroy(proc);
         return EXIT_FAILURE;
     }
 
-    // Convertir le pattern en tableaux d'octets et générer le mask
+    
     unsigned char *pattern = NULL, *mask = NULL;
     size_t pattern_len;
     pattern_to_bytes_and_mask(pattern_str, &pattern, &mask, &pattern_len);
 
-    // Lister toutes les régions r-xp
     list_all_rxp_regions(process_get_pid(proc));
 
-    // Rechercher le pattern dans toutes les régions r-xp
     find_pattern_in_all_memory_regions(proc, pattern, mask, pattern_len);
 
-    // Libérer la mémoire allouée
     free(pattern);
     free(mask);
 
-    // Détruire l'objet Process
     process_destroy(proc);
 
     return EXIT_SUCCESS;
