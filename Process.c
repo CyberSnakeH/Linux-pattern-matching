@@ -7,11 +7,11 @@
 #include <ctype.h>
 
 
-// Déclaration des fonctions process_vm_readv et process_vm_writev
+
 ssize_t process_vm_readv(pid_t pid, const struct iovec *local_iov, unsigned long liovcnt, const struct iovec *remote_iov, unsigned long riovcnt, unsigned long flags);
 ssize_t process_vm_writev(pid_t pid, const struct iovec *local_iov, unsigned long liovcnt, const struct iovec *remote_iov, unsigned long riovcnt, unsigned long flags);
 
-// Création d'un nouvel objet Process
+
 Process* process_create(const char *name) {
     Process *proc = (Process *)malloc(sizeof(Process));
     if (!proc) {
@@ -60,7 +60,6 @@ Process* process_create(const char *name) {
     return proc;
 }
 
-// Destruction d'un objet Process
 void process_destroy(Process *proc) {
     if (proc) {
         free(proc);
@@ -68,24 +67,23 @@ void process_destroy(Process *proc) {
     }
 }
 
-// Getter pour obtenir le PID d'un objet Process
 pid_t process_get_pid(const Process *proc) {
     return proc ? proc->pid : -1;
 }
 
-// Setter pour définir le PID d'un objet Process
+
 void process_set_pid(Process *proc, pid_t pid) {
     if (proc != NULL) {
         proc->pid = pid;
     }
 }
 
-// Getter pour obtenir le nom du processus d'un objet Process
+
 const char* process_get_name(const Process *proc) {
     return proc ? proc->name : (const char *)0;
 }
 
-// Setter pour définir le nom du processus d'un objet Process
+
 void process_set_name(Process *proc, const char *name) {
     if (proc && name) {
         strncpy(proc->name, name, sizeof(proc->name) - 1);
@@ -93,7 +91,7 @@ void process_set_name(Process *proc, const char *name) {
     }
 }
 
-// Fonction pour lire la mémoire d'un processus
+
 ssize_t process_read_memory(const Process *proc, unsigned long addr, void *buf, size_t size) {
     if (!proc) return -1;
 
@@ -113,7 +111,7 @@ ssize_t process_read_memory(const Process *proc, unsigned long addr, void *buf, 
     return nread;
 }
 
-// Fonction pour écrire dans la mémoire d'un processus
+
 ssize_t process_write_memory(const Process *proc, unsigned long addr, const void *buf, size_t size) {
     if (!proc) return -1;
 
