@@ -4,13 +4,12 @@
 #include <sys/types.h>
 #include <sys/uio.h>
 
-// Structure Process
 typedef struct {
     pid_t pid;
     char name[256];
 } Process;
 
-// Fonctions pour manipuler la structure Process
+
 Process* process_create(const char *name);
 void process_destroy(Process *proc);
 pid_t process_get_pid(const Process *proc);
