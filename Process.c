@@ -1,3 +1,4 @@
+#define _GNU_SOURCE
 #include "Process.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -5,11 +6,19 @@
 #include <dirent.h>
 #include <unistd.h>
 #include <ctype.h>
+#include <limits.h>
 
-
-
-ssize_t process_vm_readv(pid_t pid, const struct iovec *local_iov, unsigned long liovcnt, const struct iovec *remote_iov, unsigned long riovcnt, unsigned long flags);
-ssize_t process_vm_writev(pid_t pid, const struct iovec *local_iov, unsigned long liovcnt, const struct iovec *remote_iov, unsigned long riovcnt, unsigned long flags);
+static int is_pid_dir(const char *name) {
+    if (!name || *name == '\0') {
+        return 0;
+    }
+    for (const unsigned char *p = (const unsigned char *)name; *p != '\0'; p++) {
+        if (!isdigit(*p)) {
+            return 0;
+        }
+    }
+    return 1;
+}
 
 
 Process* process_create(const char *name) {
@@ -33,7 +42,7 @@ Process* process_create(const char *name) {
     }
 
     while ((ent = readdir(dir)) != NULL) {
-        if (!isdigit(*ent->d_name))
+        if (!is_pid_dir(ent->d_name))
             continue;
 
         snprintf(buffer, sizeof(buffer), "/proc/%s/comm", ent->d_name);
@@ -42,7 +51,11 @@ Process* process_create(const char *name) {
             if (fgets(buffer, sizeof(buffer), fp)) {
                 buffer[strcspn(buffer, "\n")] = '\0';
                 if (strcmp(buffer, name) == 0) {
-                    proc->pid = (pid_t)atoi(ent->d_name);
+                    char *end = NULL;
+                    long pid = strtol(ent->d_name, &end, 10);
+                    if (end && *end == '\0' && pid > 0 && pid <= INT_MAX) {
+                        proc->pid = (pid_t)pid;
+                    }
                     fclose(fp);
                     break;
                 }
@@ -63,7 +76,6 @@ Process* process_create(const char *name) {
 void process_destroy(Process *proc) {
     if (proc) {
         free(proc);
-        proc = NULL;
     }
 }
 
@@ -80,7 +92,7 @@ void process_set_pid(Process *proc, pid_t pid) {
 
 
 const char* process_get_name(const Process *proc) {
-    return proc ? proc->name : (const char *)0;
+    return proc ? proc->name : NULL;
 }
 
 
@@ -104,10 +116,6 @@ ssize_t process_read_memory(const Process *proc, unsigned long addr, void *buf, 
     remote[0].iov_len = size;
 
     ssize_t nread = process_vm_readv(proc->pid, local, 1, remote, 1, 0); 
-    if (nread == -1) {
-        perror("Failed to read memory using process_vm_readv");
-    }
-
     return nread;
 }
 
@@ -124,9 +132,5 @@ ssize_t process_write_memory(const Process *proc, unsigned long addr, const void
     remote[0].iov_len = size;
 
     ssize_t nwritten = process_vm_writev(proc->pid, local, 1, remote, 1, 0);
-    if (nwritten == -1) {
-        perror("Failed to write memory using process_vm_writev");
-    }
-
     return nwritten;
 }

@@ -1,0 +1,9 @@
+/FakeGame/
+/process_memory_scanner
+/AGENTS.md
+/agent.md
+*.o
+*.a
+*.so
+*.out
+*.dSYM/
